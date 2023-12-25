@@ -1,1 +1,1 @@
-resolution = (800, 600)
+resolution = (900, 700)
