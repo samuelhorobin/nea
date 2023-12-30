@@ -92,7 +92,6 @@ class Enemy(pygame.sprite.Sprite):
             self.hitbox = pygame.rect.Rect((offset[0]*scale + self.grid_col*5*scale, # x
                                             offset[1]*scale + self.grid_row*5*scale), # y
                                             (5*scale, 5*scale)) # size
-            print(self.hitbox.topleft)
             
 
 

@@ -3,7 +3,7 @@ import numpy as np
 from collections import deque
 
 import generate_terrain as gt
-import generate_terrain_copy as gtc
+import generate_terrain as gtc
 import settings
 import tools
 import sprites

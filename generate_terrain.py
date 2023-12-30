@@ -1,47 +1,105 @@
 import numpy as np
-from collections import deque
+import pygame
+import tools
 
-def generate_terrain(seed:int=1, resolution:int=64, adjascents:list=None):
+
+def generate_terrain(power=6, roughness=1, seed=1, smoothing_factor=1):
+    size = 2**power + 1
     #np.random.seed(seed)
 
-    cells = np.random.choice(2,
-                            size=(resolution+2, resolution+2),
-                            p=[0.5, 0.5])
-    
-    if adjascents == None:
-        cells[0:resolution+1, 0] = 0
-        cells[0, 0:resolution+1] = 0
-        cells[0:resolution+1, resolution+1] = 0
-        cells[resolution+1, 0:resolution+2] = 0
+    terrain = np.zeros((size, size), dtype=float)
+    corners = [(0, 0), (0, size - 1), (size - 1, 0), (size - 1, size - 1)]
+    for corner in corners:
+        terrain[corner] = np.random.uniform(0, 1)
 
-    generating = True
-    delta_height_history = deque(maxlen = 5)
-    height_map = cells.copy()
+    step = size - 1
+    while step > 1:
+        half = step // 2
+        for y in range(0, size - 1, step):
+            for x in range(0, size - 1, step):
+                average = (
+                    terrain[y, x]
+                    + terrain[y + step, x]
+                    + terrain[y, x + step]
+                    + terrain[y + step, x + step]
+                ) / 4.0
+                terrain[y + half, x + half] = average + np.random.uniform(-roughness, roughness)
 
-    while generating:
-        frame = cells.copy()
+        for y in range(0, size - 1, step):
+            for x in range(0, size - 1, step):
+                left = terrain[y + half, x]
+                right = terrain[y + half, x + step]
+                top = terrain[y, x + half]
+                bottom = terrain[y + step, x + half]
 
-        for row, col in np.ndindex(cells.shape):
-            walls = np.sum(cells[row - 1:row + 2, col-1:col+2]) - cells[row, col]
-            if walls > 4:
-                cells[row, col] = 0
-            else:
-                cells[row, col] = 1
+                terrain[y + half, x] = (terrain[y, x] + terrain[y + step, x] + top + left) / 4.0 + np.random.uniform(
+                    -roughness, roughness
+                )
+                terrain[y + half, x + step] = (
+                    terrain[y, x + step] + terrain[y + step, x + step] + top + right
+                ) / 4.0 + np.random.uniform(-roughness, roughness)
+                terrain[y, x + half] = (terrain[y, x] + terrain[y, x + step] + top + left) / 4.0 + np.random.uniform(
+                    -roughness, roughness
+                )
+                terrain[y + step, x + half] = (
+                    terrain[y + step, x] + terrain[y + step, x + step] + bottom + right
+                ) / 4.0 + np.random.uniform(-roughness, roughness)
+        step = half
 
-       
+    # Apply smoothing
+    for _ in range(smoothing_factor):
+        terrain = smooth_terrain(terrain)
 
-        delta_height = 0
-        for row, col in np.ndindex(cells.shape):
-            height_map += cells[row, col]
-            delta_height += cells[row, col] - frame[row, col]
-        delta_height_history.append(delta_height)
-        
-        sum_delta_height = 0
-        for val in delta_height_history:
-            sum_delta_height += val
+    # Trim the sides
+    terrain = terrain[1:-1, 1:-1]
 
-        mean_delta_height = sum_delta_height / len(delta_height_history)
+    for row, col in np.ndindex(terrain.shape):
+        terrain[row, col] = tools.float_to_color(terrain[row, col])
 
-        if mean_delta_height == 0: generating = False
-        
-    return cells
+    return terrain
+
+def smooth_terrain(terrain):
+    # Simple averaging smoothing function
+    smoothed_terrain = terrain.copy()
+
+    for row, col in np.ndindex(terrain.shape):
+        smoothed_terrain[row, col] = np.sum(terrain[row - 1:row + 2, col-1:col+2]) / 9
+
+    return smoothed_terrain
+
+
+
+
+
+
+
+def __visualize_terrain(terrain):
+    pygame.init()
+
+    size = terrain.shape[0]
+    scale = 6  # Scale for visualization
+
+    screen = pygame.display.set_mode((size * scale, size * scale))
+    pygame.display.set_caption("Terrain Visualization")
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        for y in range(size):
+            for x in range(size):
+                height = tools.change_hue(gray_color=tools.float_to_color(terrain[x, y]),
+                                    new_hue=145)
+                
+                # Ensure color_index stays within the bounds of the colors list
+                pygame.draw.rect(screen, (height), (x * scale, y * scale, scale, scale))
+
+        pygame.display.flip()
+
+    pygame.quit()
+
+if __name__ == '__main__':
+    terrain = generate_terrain(power=6, roughness=0.5, smoothing_factor=1)
+    __visualize_terrain(terrain)
