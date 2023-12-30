@@ -59,10 +59,11 @@ def main():
     initial_tower = sprites.Bait(pos=(20, 20), cells=grid)
     towers_group.add(initial_tower)
 
-    enemy = sprites.Enemy()
-    enemy.spawn(grid, offset, scale)
-    enemy.go_to((0,0), 250)
-    enemies_group.add(enemy)
+    for _ in range(10): 
+        enemy = sprites.Enemy()
+        enemy.spawn(grid, offset, scale)
+        enemy.navigate_to(grid, (0,0))
+        enemies_group.add(enemy)
   
     # Variables to track continuous movement
     move_keys = {pygame.K_UP: False, pygame.K_DOWN: False, pygame.K_RIGHT: False, pygame.K_LEFT: False,
@@ -116,7 +117,7 @@ def main():
         draw_grid(screen, grid, scale, offset)
 
         towers_group.update(screen, scale, offset)
-        enemies_group.update(screen, scale, offset)
+        enemies_group.update(screen, grid, scale, offset)
 
         # if pygame.time.get_ticks() % 1 == 0:
         #     enemy = sprites.Enemy()

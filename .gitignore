@@ -7,3 +7,10 @@ __pycache__/generate_terrain.cpython-311.pyc
 __pycache__/settings.cpython-311.pyc
 __pycache__/sprites.cpython-311.pyc
 __pycache__/tools.cpython-311.pyc
+__pycache__/tools.cpython-311.pyc
+__pycache__/sprites.cpython-311.pyc
+__pycache__/settings.cpython-311.pyc
+__pycache__/path_finding.cpython-311.pyc
+__pycache__/generate_terrain.cpython-311.pyc
+__pycache__/djikstras.cpython-311.pyc
+__pycache__/a_star_path.cpython-311.pyc

@@ -1,4 +1,5 @@
 import numpy as np
+import cProfile
 
 def get_neighbors(grid, node):
     rows, cols = grid.shape
@@ -12,7 +13,7 @@ def get_neighbors(grid, node):
 
     return neighbors
 
-def dijkstras(grid, start, end):
+def path_find(grid, start, end):
     rows, cols = grid.shape
 
     distances = np.full_like(grid, np.inf, dtype=float)
@@ -44,7 +45,7 @@ def dijkstras(grid, start, end):
 
         for neighbor in get_neighbors(grid, min_node):
             change = grid[neighbor] - grid[min_node]
-            cost = max(change, 1)  # Cost is the change; if negative, set to 1
+            cost = max(change, 10)  # Cost is the change; if negative, set to 1
 
             new_dist = distances[min_node] + cost
             if new_dist < distances[neighbor]:
@@ -64,11 +65,8 @@ if __name__ == '__main__':
 
     start_node = (0, 0)
     end_node = (4, 4)
-    path = dijkstras(grid, start_node, end_node)
+    path = path_find(grid, start_node, end_node)
 
     if path:
-        print("Shortest path found:")
         for node in path:
             print(node)
-    else:
-        print("No path found.")
