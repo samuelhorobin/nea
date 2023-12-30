@@ -6,6 +6,7 @@ import generate_terrain as gt
 import generate_terrain_copy as gtc
 import settings
 import tools
+import sprites
 
 def draw_grid(screen, cells, scale, offset):
     cursor_xy = get_cursor_xy(cells, scale, offset)
@@ -52,8 +53,16 @@ def main():
     
     grid = gtc.generate_terrain(power=6)
 
-    towers = pygame.sprite.Group()
-    enemies = pygame.sprite.Group()
+    towers_group = pygame.sprite.Group()
+    enemies_group = pygame.sprite.Group()
+
+    initial_tower = sprites.Bait(pos=(20, 20), cells=grid)
+    towers_group.add(initial_tower)
+
+    enemy = sprites.Enemy()
+    enemy.spawn(grid, offset, scale)
+    enemy.go_to((0,0), 250)
+    enemies_group.add(enemy)
   
     # Variables to track continuous movement
     move_keys = {pygame.K_UP: False, pygame.K_DOWN: False, pygame.K_RIGHT: False, pygame.K_LEFT: False,
@@ -104,8 +113,15 @@ def main():
             scale = round(scale * 2) / 2
 
         screen.fill((0, 0, 0))  # Fill the screen with black
-
         draw_grid(screen, grid, scale, offset)
+
+        towers_group.update(screen, scale, offset)
+        enemies_group.update(screen, scale, offset)
+
+        # if pygame.time.get_ticks() % 1 == 0:
+        #     enemy = sprites.Enemy()
+        #     enemy.spawn(grid)
+        #     enemies_group.add(enemy)
 
         pygame.display.update()
         clock.tick(60)  # Limit frame rate to 60 FPS
