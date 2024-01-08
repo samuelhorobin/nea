@@ -2,7 +2,6 @@ import numpy as np
 import pygame
 import tools
 
-
 def generate_terrain(power=6, roughness=1, seed=1, smoothing_factor=1):
     size = 2**power + 1
     #np.random.seed(seed)
@@ -66,12 +65,6 @@ def smooth_terrain(terrain):
         smoothed_terrain[row, col] = np.sum(terrain[row - 1:row + 2, col-1:col+2]) / 9
 
     return smoothed_terrain
-
-
-
-
-
-
 
 def __visualize_terrain(terrain):
     pygame.init()

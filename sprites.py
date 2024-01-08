@@ -13,8 +13,8 @@ class Tower(pygame.sprite.Sprite):
     def __init__(self, pos, cells):
         super().__init__()
 
-        self.pos = pos # row, col
-        self.row, self.col = self.pos
+        self.grid_pos = pos # row, col
+        self.grid_row, self.grid_col = self.grid_pos
         
         self.height = cells[pos]
         
@@ -22,6 +22,9 @@ class Tower(pygame.sprite.Sprite):
 class Bait(Tower):
     def __init__(self, pos, cells):
         super().__init__(pos, cells)
+        self.name = "Bait"
+        self.max_health = self.health = 10
+        
 
     def update(self, screen, scale, offset):
         self.draw(screen, scale, offset)
@@ -29,10 +32,45 @@ class Bait(Tower):
     def draw(self, screen, scale, offset):
         color = tools.change_hue(gray_color=self.height, 
                                  new_hue=240)
+        
+        # Border
+        pygame.draw.rect(screen, (255, 255, 255),
+            (offset[0]*scale + self.grid_col*5*scale - 0.5*scale, # x
+             offset[1]*scale + self.grid_row*5*scale - 0.5*scale, # y
+             6*scale, 6*scale),               # size
+             border_radius=2)  
 
+        # Flesh
         pygame.draw.rect(screen, color,
-            (offset[0]*scale + self.col*5*scale, # x
-             offset[1]*scale + self.row*5*scale, # y
+            (offset[0]*scale + self.grid_col*5*scale, # x
+             offset[1]*scale + self.grid_row*5*scale, # y
+             5*scale, 5*scale),               # size
+             border_radius=2)                       # border
+        
+class Shooter(Tower):
+    def __init__(self, pos, cells):
+        super().__init__(pos, cells)
+        self.name = "Shooter"
+        self.max_health = self.health = 5
+
+    def update(self, screen, scale, offset):
+            self.draw(screen, scale, offset)
+
+    def draw(self, screen, scale, offset):
+        color = tools.change_hue(gray_color=self.height, 
+                                 new_hue=120)
+        
+        # Border
+        pygame.draw.rect(screen, (255, 255, 255),
+            (offset[0]*scale + self.grid_col*5*scale - 0.5*scale, # x
+             offset[1]*scale + self.grid_row*5*scale - 0.5*scale, # y
+             6*scale, 6*scale),               # size
+             border_radius=1)  
+
+        # Flesh
+        pygame.draw.rect(screen, color,
+            (offset[0]*scale + self.grid_col*5*scale, # x
+             offset[1]*scale + self.grid_row*5*scale, # y
              5*scale, 5*scale),               # size
              border_radius=2)                       # border
         
@@ -69,10 +107,27 @@ class Enemy(pygame.sprite.Sprite):
 
         self.height = cells[self.grid_pos]
 
-        self.hitbox = pygame.rect.Rect((offset[0]*scale + self.col*scale, # x
-                                        offset[1]*scale + self.row*scale), # y
-                                       (5, 5)) # size
+        self.hitbox = pygame.rect.Rect((self.grid_col, # x
+                                        self.grid_row), # y
+                                        (5, 5)) # size
         
+    def get_closest_tower_pos(self, towers, consider_height = False):
+        if len(towers.sprites()) == 0: return None
+        shortest_distance = 9999
+
+        for tower in towers:
+            delta_height = tower.height - self.height if consider_height else 0
+            delta_x = tower.grid_row - self.grid_row
+            delta_y = tower.grid_col - self.grid_col
+            distance = (delta_height**2 + delta_x**2 + delta_y**2)**(1/2)
+
+            if distance < shortest_distance:
+                shortest_distance = distance
+                closest_pos = tower.grid_pos
+
+        return closest_pos
+
+
     def navigate_to(self, cells, goal):
         goals = path_finding.path_find(grid=cells,
                                        start=(self.grid_row, self.grid_col),
@@ -92,11 +147,11 @@ class Enemy(pygame.sprite.Sprite):
         
         for tick in range(ticks): self.movement_queue.append(vector)
 
-    def update(self, screen, cells, scale, offset):
+    def update(self, screen, cells, towers, scale, offset):
 
-        self.hitbox = pygame.rect.Rect((offset[0]*scale + self.col*5*scale, # x
-                                        offset[1]*scale + self.row*5*scale), # y
-                                       (5*scale, 5*scale)) # size
+        self.hitbox = pygame.rect.Rect((self.grid_col, # x
+                                            self.grid_row), # y
+                                            (5, 5)) # size
 
         self.draw(screen, scale, offset)
 
@@ -110,19 +165,17 @@ class Enemy(pygame.sprite.Sprite):
             self.height = cells[self.grid_row, self.grid_col]
             
 
-            self.hitbox = pygame.rect.Rect((offset[0]*scale + self.grid_col*5*scale, # x
-                                            offset[1]*scale + self.grid_row*5*scale), # y
-                                            (5*scale, 5*scale)) # size
+            self.hitbox = pygame.rect.Rect((self.grid_col, # x
+                                            self.grid_row), # y
+                                            (5, 5)) # size
             
             if self.goal_queue:
                 self.go_to(cells, self.goal_queue.popleft())
 
             else:
-                goal = (20, 20)
-
-                #self.navigate_to(cells, goal)
-            
-
+                goal = self.get_closest_tower_pos(towers)
+                if goal:
+                    self.navigate_to(cells, goal)
 
     def draw(self, screen, scale, offset):
         color = tools.change_hue(gray_color=self.height, 
@@ -132,4 +185,20 @@ class Enemy(pygame.sprite.Sprite):
              self.hitbox,               # size
              border_radius=10)  
 
+class Basic(Enemy):
+    def __init__(self):
+        super().__init__()
+        self.name = "Basic"
+        self.max_health = self.health = 3
 
+    def draw(self, screen, scale, offset):
+        color = tools.change_hue(gray_color=self.height, 
+                                 new_hue=0)
+        
+        rect = pygame.rect.Rect((offset[0]*scale + self.hitbox.x*5*scale, # x
+                                offset[1]*scale + self.hitbox.y*5*scale), # y
+                                (5*scale, 5*scale))
+
+        pygame.draw.rect(screen, color,
+             rect,               # size
+             border_radius=10)  

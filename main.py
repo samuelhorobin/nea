@@ -1,6 +1,9 @@
 import pygame
 import numpy as np
+import math
+
 from collections import deque
+
 
 import generate_terrain as gt
 import generate_terrain as gtc
@@ -36,13 +39,45 @@ def get_cursor_xy(cells, scale, offset, size = 5):
                                          size*scale, size*scale)           # Size
         
         if rect.collidepoint(mouse_pos):
-            return row, col
+            return row, col    
+        
+def display_stats(screen, font, elapsed_time, points, difficulty):
+    minutes = int(elapsed_time / 60000)
+    seconds = int((elapsed_time % 60000) / 1000)
+    milliseconds = elapsed_time % 1000
 
+    time_str = f"\
+    Time: {minutes:02}:{seconds:02}:{milliseconds:03}\n\
+    Points: {int(points)}\n\
+    Difficulty: {difficulty:.2f}\
+        "
+
+
+    text = font.render(time_str , True, (255, 255, 255))
+    text_rect = text.get_rect()
+    text_rect.topright = (settings.resolution[0] - 20, 20)  # Position the text in the upper right corner
+    screen.blit(text, text_rect)
+
+    return text_rect
+
+def display_tower_stats(screen, font, tower, time_rect = None):
+    y_displacement = time_rect.bottom if time_rect else 0
+    
+    stats_str =f"\
+    Name: {tower.name}\n\
+    Health: {tower.health}/{tower.max_health}"
+    
+    text = font.render(stats_str , True, (255, 255, 255))
+    text_rect = text.get_rect()
+    text_rect.topright = (settings.resolution[0] - 20, y_displacement + 20)  # Position the text in the upper right corner
+    screen.blit(text, text_rect)
+    
 
 
 def main():    
     pygame.init()
     screen = pygame.display.set_mode(settings.resolution)
+    font = pygame.font.Font(None, 36)
 
     seed = 0
     scale = 1
@@ -50,20 +85,21 @@ def main():
 
     zoom_queue = deque()
     zoom_ticks = 15
+
+    count = 0
+    points = 1
+    difficulty = 20
     
-    grid = gtc.generate_terrain(power=6)
+    grid = gtc.generate_terrain(power=6,
+                                roughness=1,
+                                seed=5,
+                                smoothing_factor=1)
 
     towers_group = pygame.sprite.Group()
     enemies_group = pygame.sprite.Group()
 
     initial_tower = sprites.Bait(pos=(20, 20), cells=grid)
     towers_group.add(initial_tower)
-
-    for _ in range(10): 
-        enemy = sprites.Enemy()
-        enemy.spawn(grid, offset, scale)
-        enemy.navigate_to(grid, (0,0))
-        enemies_group.add(enemy)
   
     # Variables to track continuous movement
     move_keys = {pygame.K_UP: False, pygame.K_DOWN: False, pygame.K_RIGHT: False, pygame.K_LEFT: False,
@@ -74,6 +110,13 @@ def main():
 
     running = True
     while running:
+        elapsed_time = pygame.time.get_ticks()
+        count += 1
+
+        points += 0.01
+        difficulty += 0.00001
+
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -116,13 +159,20 @@ def main():
         screen.fill((0, 0, 0))  # Fill the screen with black
         draw_grid(screen, grid, scale, offset)
 
-        towers_group.update(screen, scale, offset)
-        enemies_group.update(screen, grid, scale, offset)
+        if count % 360 == 0:
+            for _ in range(int(difficulty)): 
+                enemy = sprites.Basic()
+                enemy.spawn(grid, offset, scale)
+                enemies_group.add(enemy)
 
-        # if pygame.time.get_ticks() % 1 == 0:
-        #     enemy = sprites.Enemy()
-        #     enemy.spawn(grid)
-        #     enemies_group.add(enemy)
+        towers_group.update(screen, scale, offset)
+        enemies_group.update(screen, grid, towers_group, scale, offset)
+
+        stats_rect = display_stats(screen, font, elapsed_time, points, difficulty)
+
+        for tower in towers_group:
+            if tower.grid_pos == get_cursor_xy(grid, scale, offset, size = 5):
+                display_tower_stats(screen, font, tower, stats_rect)
 
         pygame.display.update()
         clock.tick(60)  # Limit frame rate to 60 FPS
