@@ -79,6 +79,11 @@ class Enemy(pygame.sprite.Sprite):
         super().__init__()
         self.grid_pos = None
         self.height = None
+        
+        self.speed = 1
+        self.health = self.max_health = 1
+        self.name = "Enemy"
+        
         self.movement_queue = deque()
         self.goal_queue = deque()
 
@@ -140,7 +145,8 @@ class Enemy(pygame.sprite.Sprite):
         self.target_grid_row, self.target_grid_col = goal
 
         delta_height = max(int(cells[goal]) - int(cells[self.grid_row, self.grid_col]), 10)
-        ticks = delta_height * 1
+
+        ticks = int(delta_height * 1 / (2**(self.speed - 1)))
 
         vector = (self.target_grid_row - self.grid_row) / ticks, \
                  (self.target_grid_col - self.grid_col) / ticks
@@ -148,12 +154,14 @@ class Enemy(pygame.sprite.Sprite):
         for tick in range(ticks): self.movement_queue.append(vector)
 
     def update(self, screen, cells, towers, scale, offset):
+        self.determine_movement(cells, towers)
+        self.draw(screen, scale, offset)
 
+
+    def determine_movement(self, cells, towers):
         self.hitbox = pygame.rect.Rect((self.grid_col, # x
                                             self.grid_row), # y
                                             (5, 5)) # size
-
-        self.draw(screen, scale, offset)
 
         if self.movement_queue:
             movement = self.movement_queue.popleft()
@@ -198,7 +206,21 @@ class Basic(Enemy):
         rect = pygame.rect.Rect((offset[0]*scale + self.hitbox.x*5*scale, # x
                                 offset[1]*scale + self.hitbox.y*5*scale), # y
                                 (5*scale, 5*scale))
+        
 
+        # # Border
+        # pygame.draw.rect(screen, (0, 0, 0),
+        #     (rect.x - 0.25*scale, # x
+        #      rect.y - 0.25*scale, # y
+        #      rect.width+(0.5*scale), rect.height+(0.5*scale)),               # size
+        #      border_radius=10)  
+
+        # Flesh
         pygame.draw.rect(screen, color,
              rect,               # size
-             border_radius=10)  
+             border_radius=10) 
+
+
+    def update(self, screen, cells, towers, scale, offset):
+        self.determine_movement(cells, towers)
+        self.draw(screen, scale, offset)

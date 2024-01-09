@@ -10,6 +10,7 @@ import generate_terrain as gtc
 import settings
 import tools
 import sprites
+import gui
 
 def draw_grid(screen, cells, scale, offset):
     cursor_xy = get_cursor_xy(cells, scale, offset)
@@ -41,43 +42,12 @@ def get_cursor_xy(cells, scale, offset, size = 5):
         if rect.collidepoint(mouse_pos):
             return row, col    
         
-def display_stats(screen, font, elapsed_time, points, difficulty):
-    minutes = int(elapsed_time / 60000)
-    seconds = int((elapsed_time % 60000) / 1000)
-    milliseconds = elapsed_time % 1000
-
-    time_str = f"\
-    Time: {minutes:02}:{seconds:02}:{milliseconds:03}\n\
-    Points: {int(points)}\n\
-    Difficulty: {difficulty:.2f}\
-        "
-
-
-    text = font.render(time_str , True, (255, 255, 255))
-    text_rect = text.get_rect()
-    text_rect.topright = (settings.resolution[0] - 20, 20)  # Position the text in the upper right corner
-    screen.blit(text, text_rect)
-
-    return text_rect
-
-def display_tower_stats(screen, font, tower, time_rect = None):
-    y_displacement = time_rect.bottom if time_rect else 0
-    
-    stats_str =f"\
-    Name: {tower.name}\n\
-    Health: {tower.health}/{tower.max_health}"
-    
-    text = font.render(stats_str , True, (255, 255, 255))
-    text_rect = text.get_rect()
-    text_rect.topright = (settings.resolution[0] - 20, y_displacement + 20)  # Position the text in the upper right corner
-    screen.blit(text, text_rect)
-    
-
 
 def main():    
     pygame.init()
     screen = pygame.display.set_mode(settings.resolution)
-    font = pygame.font.Font(None, 36)
+
+    font = pygame.font.Font(None, 15)
 
     seed = 0
     scale = 1
@@ -87,6 +57,7 @@ def main():
     zoom_ticks = 15
 
     count = 0
+    cash = 0
     points = 1
     difficulty = 20
     
@@ -98,7 +69,7 @@ def main():
     towers_group = pygame.sprite.Group()
     enemies_group = pygame.sprite.Group()
 
-    initial_tower = sprites.Bait(pos=(20, 20), cells=grid)
+    initial_tower = sprites.Bait(pos=(21, 20), cells=grid)
     towers_group.add(initial_tower)
   
     # Variables to track continuous movement
@@ -108,12 +79,16 @@ def main():
 
     clock = pygame.time.Clock()
 
+    enemy = sprites.Basic()
+    enemy.spawn(grid, offset, scale)
+    enemies_group.add(enemy)
+
     running = True
     while running:
         elapsed_time = pygame.time.get_ticks()
         count += 1
 
-        points += 0.01
+        points += 0.01 * difficulty
         difficulty += 0.00001
 
 
@@ -159,20 +134,27 @@ def main():
         screen.fill((0, 0, 0))  # Fill the screen with black
         draw_grid(screen, grid, scale, offset)
 
-        if count % 360 == 0:
-            for _ in range(int(difficulty)): 
-                enemy = sprites.Basic()
-                enemy.spawn(grid, offset, scale)
-                enemies_group.add(enemy)
+        # if count % 360 == 0:
+        #     for _ in range(int(difficulty)): 
+        #         enemy = sprites.Basic()
+        #         enemy.spawn(grid, offset, scale)
+        #         enemies_group.add(enemy)
 
         towers_group.update(screen, scale, offset)
         enemies_group.update(screen, grid, towers_group, scale, offset)
 
-        stats_rect = display_stats(screen, font, elapsed_time, points, difficulty)
+        cursor_xy = get_cursor_xy(grid, scale, offset, size = 5)
 
-        for tower in towers_group:
-            if tower.grid_pos == get_cursor_xy(grid, scale, offset, size = 5):
-                display_tower_stats(screen, font, tower, stats_rect)
+        hovered_tower = None
+        hovered_enemies = []
+        for tower in towers_group: hovered_tower = tower if tower.grid_pos == cursor_xy else None
+        for enemy in enemies_group:
+            if tuple(reversed(enemy.hitbox.topleft)) == cursor_xy:
+                hovered_enemies.append(enemy)
+                
+        # gui.display_tower_stats(screen, font, tower, stats_rect)
+
+        gui.render_gui(screen, font, elapsed_time, points, difficulty, hovered_tower, hovered_enemies)
 
         pygame.display.update()
         clock.tick(60)  # Limit frame rate to 60 FPS
