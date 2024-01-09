@@ -47,7 +47,7 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode(settings.resolution)
 
-    font = pygame.font.Font(None, 15)
+    font = pygame.font.Font(None, 32)
 
     seed = 0
     scale = 1
@@ -90,6 +90,8 @@ def main():
 
         points += 0.01 * difficulty
         difficulty += 0.00001
+        base_income = difficulty * 0.01
+        cash += base_income
 
 
         for event in pygame.event.get():
@@ -134,11 +136,11 @@ def main():
         screen.fill((0, 0, 0))  # Fill the screen with black
         draw_grid(screen, grid, scale, offset)
 
-        # if count % 360 == 0:
-        #     for _ in range(int(difficulty)): 
-        #         enemy = sprites.Basic()
-        #         enemy.spawn(grid, offset, scale)
-        #         enemies_group.add(enemy)
+        if count % 360 == 0:
+            for _ in range(int(difficulty)): 
+                enemy = sprites.Basic()
+                enemy.spawn(grid, offset, scale)
+                enemies_group.add(enemy)
 
         towers_group.update(screen, scale, offset)
         enemies_group.update(screen, grid, towers_group, scale, offset)
@@ -154,7 +156,7 @@ def main():
                 
         # gui.display_tower_stats(screen, font, tower, stats_rect)
 
-        gui.render_gui(screen, font, elapsed_time, points, difficulty, hovered_tower, hovered_enemies)
+        gui.render_gui(screen, font, elapsed_time, points, difficulty, cash, hovered_tower, hovered_enemies)
 
         pygame.display.update()
         clock.tick(60)  # Limit frame rate to 60 FPS
