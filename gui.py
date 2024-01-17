@@ -74,14 +74,22 @@ def display_personal_stats(screen, font, cash):
     return text_rect
 
 def render_gui(screen,
-               font, elapsed_time, points, difficulty, cash,
+               large_font, font,
+               paused, elapsed_time, points, difficulty, cash,
                selected_tower = None,
                selected_enemies = None):
+    
+    if paused:
+        text = large_font.render("PAUSED" , True, (255, 255, 255))
+        text_rect = text.get_rect()
+
+        text_rect.midtop = (settings.resolution[0] // 2, 20)  # Position the text in the upper right corner
+        screen.blit(text, text_rect)
     
     # top right gui
     bottom_rect = None
     for gui_function in [display_game_stats, display_tower_stats, display_enemy_stats]:
-        if gui_function == display_game_stats:       bottom_rect = display_game_stats(screen, font, elapsed_time, points, difficulty)
+        if gui_function == display_game_stats:  bottom_rect = display_game_stats(screen, font, elapsed_time, points, difficulty)
         if gui_function == display_tower_stats: bottom_rect = display_tower_stats(screen, font, selected_tower, bottom_rect)
         if gui_function == display_enemy_stats: bottom_rect = display_enemy_stats(screen, font, selected_enemies, bottom_rect)
 
@@ -89,4 +97,8 @@ def render_gui(screen,
     bottom_rect = None
     for gui_function in [display_personal_stats]:
         if gui_function == display_personal_stats: bottom_rect = display_personal_stats(screen, font, cash)
+
+    
+    # left gui
+        
         

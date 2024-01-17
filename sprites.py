@@ -17,17 +17,28 @@ class Tower(pygame.sprite.Sprite):
         self.grid_row, self.grid_col = self.grid_pos
         
         self.height = cells[pos]
+
+    def update(self, screen, scale, offset, paused):
+        self.draw(screen, scale, offset)
         
+    def hurt(self, damage, enemies):
+        self.health -= damage
+        if self.health <= 0:
+            self.die(enemies)
+
+    def die(self, enemies):
+        for enemy in enemies:
+            if enemy.goal_queue:
+                if enemy.goal_queue[-1] == self.grid_pos:
+                    enemy.goal_queue.clear()
+        self.kill()      
+
         
 class Bait(Tower):
     def __init__(self, pos, cells):
         super().__init__(pos, cells)
         self.name = "Bait"
         self.max_health = self.health = 10
-        
-
-    def update(self, screen, scale, offset):
-        self.draw(screen, scale, offset)
 
     def draw(self, screen, scale, offset):
         color = tools.change_hue(gray_color=self.height, 
@@ -52,9 +63,6 @@ class Shooter(Tower):
         super().__init__(pos, cells)
         self.name = "Shooter"
         self.max_health = self.health = 5
-
-    def update(self, screen, scale, offset):
-            self.draw(screen, scale, offset)
 
     def draw(self, screen, scale, offset):
         color = tools.change_hue(gray_color=self.height, 
@@ -82,6 +90,8 @@ class Enemy(pygame.sprite.Sprite):
         
         self.speed = 1
         self.health = self.max_health = 1
+        self.damage = 1
+        self.damage_cooldown = self.damage_ticks = 60 
         self.name = "Enemy"
         
         self.movement_queue = deque()
@@ -132,6 +142,25 @@ class Enemy(pygame.sprite.Sprite):
 
         return closest_pos
 
+    def get_touching_towers(self, towers):
+        touching_towers = []
+        for tower in towers:
+            if tower.grid_pos == self.grid_pos:
+                touching_towers.append(tower)
+        return touching_towers
+    
+    def inflict_damage(self, towers, enemies):
+        for tower in self.get_touching_towers(towers):
+            tower.hurt(self.damage, enemies)
+
+    def damage_update(self, towers, enemies):
+        if self.damage_ticks >= self.damage_cooldown:
+            self.damage_ticks = 0
+            touching_towers = self.get_touching_towers(towers)
+            self.inflict_damage(touching_towers, enemies)
+        else:
+            self.damage_ticks += 1
+
 
     def navigate_to(self, cells, goal):
         goals = path_finding.path_find(grid=cells,
@@ -153,8 +182,10 @@ class Enemy(pygame.sprite.Sprite):
         
         for tick in range(ticks): self.movement_queue.append(vector)
 
-    def update(self, screen, cells, towers, scale, offset):
-        self.determine_movement(cells, towers)
+    def update(self, screen, cells, towers, enemies, scale, offset, paused):
+        if not paused:
+            self.determine_movement(cells, towers)
+            self.damage_update(towers, enemies)
         self.draw(screen, scale, offset)
 
 
@@ -170,6 +201,7 @@ class Enemy(pygame.sprite.Sprite):
 
         else:
             self.grid_row, self.grid_col = self.target_grid_row, self.target_grid_col
+            self.grid_pos = self.grid_row, self.grid_col
             self.height = cells[self.grid_row, self.grid_col]
             
 
@@ -221,6 +253,7 @@ class Basic(Enemy):
              border_radius=10) 
 
 
-    def update(self, screen, cells, towers, scale, offset):
-        self.determine_movement(cells, towers)
-        self.draw(screen, scale, offset)
+    # def update(self, screen, cells, towers, scale, offset):
+    #     self.determine_movement(cells, towers)
+    #     self.damage_update(towers)
+    #     self.draw(screen, scale, offset)

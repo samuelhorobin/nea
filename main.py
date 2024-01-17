@@ -1,6 +1,6 @@
 import pygame
 import numpy as np
-import math
+import random
 
 from collections import deque
 
@@ -12,47 +12,17 @@ import tools
 import sprites
 import gui
 
-def draw_grid(screen, cells, scale, offset):
-    cursor_xy = get_cursor_xy(cells, scale, offset)
-
-    for row, col in np.ndindex(cells.shape):
-        color = tools.change_hue(gray_color=cells[row][col], 
-                                 new_hue=145)
-        size = 5
-
-        if cursor_xy:
-            if row == cursor_xy[0] or col == cursor_xy[1]:
-                desaturate_val = 90
-                color = tools.desaturate_color(color, desaturate_val)
-
-        
-        # Draw rectangles, using as background the screen value.
-        pygame.draw.rect(screen, color,
-                        (offset[0]*scale + col*size*scale, offset[1]*scale + row*size*scale,
-                        size*scale, size*scale),
-                        border_radius=1)
-
-def get_cursor_xy(cells, scale, offset, size = 5):
-    mouse_pos = pygame.mouse.get_pos()
-    for row, col in np.ndindex(cells.shape):
-        rect = pygame.rect.Rect(offset[0]*scale + col*size*scale, # x Pos
-                                         offset[1]*scale + row*size*scale, # y Pos
-                                         size*scale, size*scale)           # Size
-        
-        if rect.collidepoint(mouse_pos):
-            return row, col    
-        
-
 def main():    
     pygame.init()
     screen = pygame.display.set_mode(settings.resolution)
 
+    large_font = pygame.font.Font(None, 64)
     font = pygame.font.Font(None, 32)
 
     seed = 0
     scale = 1
     offset = [0, 0]
-
+    zoom_origin = [0, 0]
     zoom_queue = deque()
     zoom_ticks = 15
 
@@ -60,7 +30,7 @@ def main():
     cash = 0
     points = 1
     difficulty = 20
-    
+
     grid = gtc.generate_terrain(power=6,
                                 roughness=1,
                                 seed=5,
@@ -69,8 +39,21 @@ def main():
     towers_group = pygame.sprite.Group()
     enemies_group = pygame.sprite.Group()
 
-    initial_tower = sprites.Bait(pos=(21, 20), cells=grid)
+    initial_tower1 = sprites.Bait(pos=(21, 20), cells=grid)
+    towers_group.add(initial_tower1)
+
+    initial_tower = sprites.Bait(pos=(25, 20), cells=grid)
     towers_group.add(initial_tower)
+
+    initial_tower = sprites.Bait(pos=(11, 30), cells=grid)
+    towers_group.add(initial_tower)
+
+    initial_tower = sprites.Bait(pos=(1, 40), cells=grid)
+    towers_group.add(initial_tower)
+
+    initial_tower = sprites.Bait(pos=(8, 10), cells=grid)
+    towers_group.add(initial_tower)
+    
   
     # Variables to track continuous movement
     move_keys = {pygame.K_UP: False, pygame.K_DOWN: False, pygame.K_RIGHT: False, pygame.K_LEFT: False,
@@ -84,15 +67,22 @@ def main():
     enemies_group.add(enemy)
 
     running = True
+    paused = False
+
     while running:
-        elapsed_time = pygame.time.get_ticks()
-        count += 1
+        if not paused:
+            elapsed_time = pygame.time.get_ticks()
+            count += 1
+            points += 0.01 * difficulty
+            difficulty += 0.00001
+            base_income = difficulty * 0.01
+            cash += base_income
 
-        points += 0.01 * difficulty
-        difficulty += 0.00001
-        base_income = difficulty * 0.01
-        cash += base_income
-
+            if count % 360 == 0:
+                for _ in range(int(difficulty)): 
+                    enemy = sprites.Basic()
+                    enemy.spawn(grid, offset, scale)
+                    enemies_group.add(enemy)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -102,10 +92,15 @@ def main():
             elif event.type == pygame.KEYDOWN:
                 if event.key in move_keys: move_keys[event.key] = True
 
+                # Zoom keys
                 if event.key == pygame.K_i and scale >= 0.5 and len(zoom_queue) == 0:
                     for _ in range(zoom_ticks): zoom_queue.append(-scale / 2 / zoom_ticks)
                 if event.key == pygame.K_o and scale <= 8 and len(zoom_queue) == 0:
                     for _ in range(zoom_ticks): zoom_queue.append(scale / zoom_ticks)
+
+                # Misc keys
+                if event.key == pygame.K_SPACE:
+                    paused = not paused
 
             elif event.type == pygame.KEYUP:
                 if event.key in move_keys:
@@ -129,34 +124,46 @@ def main():
 
         # Apply any user requested zoom adjustments
         if zoom_queue:
-            scale += zoom_queue.popleft()
+            delta_scale = zoom_queue.popleft()
+            scale += delta_scale
+
+            zoom_constant = 10
+
+            if delta_scale < 0:
+                offset[0] += zoom_constant / scale
+                offset[1] += zoom_constant / scale
+            elif delta_scale > 0:
+                offset[0] -= zoom_constant / scale
+                offset[1] -= zoom_constant / scale
+
+
         if not zoom_queue:
             scale = round(scale * 2) / 2
 
         screen.fill((0, 0, 0))  # Fill the screen with black
-        draw_grid(screen, grid, scale, offset)
+        tools.draw_grid(screen, grid, scale, offset)
 
-        if count % 360 == 0:
-            for _ in range(int(difficulty)): 
-                enemy = sprites.Basic()
-                enemy.spawn(grid, offset, scale)
-                enemies_group.add(enemy)
+        towers_group.update(screen, scale, offset, paused)
+        enemies_group.update(screen, grid, towers_group, enemies_group, scale, offset, paused)
 
-        towers_group.update(screen, scale, offset)
-        enemies_group.update(screen, grid, towers_group, scale, offset)
-
-        cursor_xy = get_cursor_xy(grid, scale, offset, size = 5)
+        cursor_xy = tools.get_cursor_xy(grid, scale, offset, size = 5)
 
         hovered_tower = None
         hovered_enemies = []
-        for tower in towers_group: hovered_tower = tower if tower.grid_pos == cursor_xy else None
+        for tower in towers_group:
+            if tower.grid_pos == cursor_xy:
+                hovered_tower = tower
+
         for enemy in enemies_group:
             if tuple(reversed(enemy.hitbox.topleft)) == cursor_xy:
                 hovered_enemies.append(enemy)
                 
         # gui.display_tower_stats(screen, font, tower, stats_rect)
 
-        gui.render_gui(screen, font, elapsed_time, points, difficulty, cash, hovered_tower, hovered_enemies)
+        gui.render_gui(screen,
+                       large_font, font,
+                       paused, elapsed_time, points, difficulty, cash,
+                       hovered_tower, hovered_enemies)
 
         pygame.display.update()
         clock.tick(60)  # Limit frame rate to 60 FPS
