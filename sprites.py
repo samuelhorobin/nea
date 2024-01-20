@@ -188,7 +188,6 @@ class Enemy(pygame.sprite.Sprite):
             self.damage_update(towers, enemies)
         self.draw(screen, scale, offset)
 
-
     def determine_movement(self, cells, towers):
         self.hitbox = pygame.rect.Rect((self.grid_col, # x
                                             self.grid_row), # y

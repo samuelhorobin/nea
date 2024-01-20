@@ -73,8 +73,31 @@ def display_personal_stats(screen, font, cash):
 
     return text_rect
 
+def display_menu(screen, menu, pos, large_font, font):
+    menu_texts = []
+    menu_rects = []
+
+    for key, value in menu.boolean_dict.items():
+        if value:
+            text = large_font.render(key, True, (255, 255, 255))
+        else:
+            text = font.render(key, True, (255, 255, 255))
+
+        text_rect = text.get_rect()
+        menu_texts.append(text)
+        menu_rects.append(text_rect)
+
+    menu_rects[0].topleft = pos
+
+    for index in range(1, len(menu_rects)):
+        menu_rects[index].topleft = (pos[0], menu_rects[index - 1].bottom + 10)
+
+    for text, rect in zip(menu_texts, menu_rects):
+        screen.blit(text, rect)
+
 def render_gui(screen,
-               large_font, font,
+               large_font, font, small_font,
+               tower_menu,
                paused, elapsed_time, points, difficulty, cash,
                selected_tower = None,
                selected_enemies = None):
@@ -100,5 +123,17 @@ def render_gui(screen,
 
     
     # left gui
-        
-        
+    display_menu(screen, tower_menu, (20, bottom_rect.bottom + 40), font, small_font)
+
+def cursor_place_tower(screen, scale, offset,
+                       cursor_xy, tower, small_font):
+    
+    side_length = 10 if tower[0] == "[6] Headquarters ($800)" else 5
+
+    rect = pygame.rect.Rect((offset[0]*scale + cursor_xy[1]*5*scale, # x
+                             offset[1]*scale + cursor_xy[0]*5*scale), # y
+                            (side_length*scale, side_length*scale))
+    
+    pygame.draw.rect(screen, (0, 0, 255),
+             rect,               # size
+             border_radius=100) 

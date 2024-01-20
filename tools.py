@@ -5,18 +5,26 @@ import colorsys
 pygame.init()
 
 class ExclusiveBooleanList:
-    def __init__(self, names):
+    def __init__(self, *names):
         self.boolean_dict = {name: False for name in names}
 
-    def set_true(self, name):
+    def select(self, name):
         if name in self.boolean_dict:
-            self.boolean_dict = {key: False for key in self.boolean_dict}
-            self.boolean_dict[name] = True
+            if self.boolean_dict[name]:
+                self.boolean_dict = {key: False for key in self.boolean_dict}
+            else:
+                self.boolean_dict = {key: False for key in self.boolean_dict}
+                self.boolean_dict[name] = True
         else:
             raise ValueError(f"Invalid name: {name}")
 
     def none_true(self):
         return all(not val for val in self.boolean_dict.values())
+    
+    def return_true(self):
+        for (key, val) in self.boolean_dict.items():
+            if val == True: return (key, val)
+        return None
 
     def __str__(self):
         return str(self.boolean_dict)
@@ -59,8 +67,8 @@ def draw_grid(screen, cells, scale, offset):
 
         if cursor_xy:
             if row == cursor_xy[0] or col == cursor_xy[1]:
-                desaturate_val = 90
-                color = desaturate_color(color, desaturate_val)
+                color = desaturate_color(color, 90)
+            
 
         pygame.draw.rect(screen, color,
                          (offset[0] * scale + col * size * scale, offset[1] * scale + row * size * scale,
