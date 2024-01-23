@@ -3,7 +3,7 @@ import pygame
 pygame.init()
 infoObject = pygame.display.Info()
 
-auto_resolution = True
+auto_resolution = False
 resolution = (900, 700)
 
 if auto_resolution:

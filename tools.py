@@ -23,7 +23,8 @@ class ExclusiveBooleanList:
     
     def return_true(self):
         for (key, val) in self.boolean_dict.items():
-            if val == True: return (key, val)
+            if val == True:
+                return key
         return None
 
     def __str__(self):
@@ -84,3 +85,20 @@ def get_cursor_xy(cells, scale, offset, size=5):
 
         if rect.collidepoint(mouse_pos):
             return row, col
+        
+    return None
+
+def can_fit(dimensions, pos, tower_grid):
+    grid_row, grid_col = pos
+    width, height = tower_grid.shape
+
+    for i in range(0, dimensions[0]):
+        for j in range(0, dimensions[1]):
+            y = grid_row + i
+            x = grid_col + j
+            if y >= height: return False
+            if x >= width: return False
+
+            if tower_grid[y, x] is not None:
+                return False
+    return True
