@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
 import colorsys
+import math
 
 pygame.init()
 
@@ -102,3 +103,53 @@ def can_fit(dimensions, pos, tower_grid):
             if tower_grid[y, x] is not None:
                 return False
     return True
+
+# def calculate_angle(start_point, end_point):
+#     delta_x = end_point[0] - start_point[0]
+#     delta_y = end_point[1] - start_point[1]
+#     angle_rad = math.atan2(delta_y, delta_x)
+#     angle_deg = math.degrees(angle_rad)
+#     return angle_deg
+
+# def draw_line_with_length(screen, colour, start, end, length):
+#     # Calculate the direction vector
+#     direction_vector = [end[0] - start[0], end[1] - start[1]]
+
+#     # Calculate the length of the direction vector
+#     direction_length = math.sqrt(direction_vector[0]**2 + direction_vector[1]**2)
+
+#     # Scale the direction vector to the desired length
+#     scaled_direction = [direction_vector[0] * length / direction_length, 
+#                         direction_vector[1] * length / direction_length]
+
+#     # Calculate the end point based on the scaled direction vector
+#     new_end = (start[0] + scaled_direction[0], start[1] + scaled_direction[1])
+
+#     # Draw the line
+#     pygame.draw.line(screen, colour, start, new_end, 5)
+
+def get_angle_to_point(reference_point: pygame.Vector2, point: pygame.Vector2) -> float:
+    """
+    Helper function to get the angle from a reference point to the mouse
+    position. This could really be used to get the angle between any two vectors.
+    Returns the results in radians, as opposed to pygame.Vector2.angle_to which gives the result in degrees
+    """
+
+    offset = point - reference_point
+    return math.atan2(offset.y, offset.x)
+
+def rotate_point_around_pivot_simple(pivot_point: pygame.Vector2, distance_from_pivot: float, angle: float) -> pygame.Vector2:
+    """Basically just plots a point that is `distance_from_pivot` units away from the pivot point, at an angle of `angle`"""
+    rotated_offset = pygame.Vector2(math.cos(angle), math.sin(angle)) * distance_from_pivot
+    return pivot_point + rotated_offset
+
+def rotate_image_around_pivot(image: pygame.Surface, pivot_point: pygame.Vector2, distance_from_pivot: pygame.Vector2, angle: float) -> tuple[pygame.Surface, pygame.Rect]:
+    """
+    Moves the image and rotates it such that the center tracks around the pivot point. Returns the image and a rect,
+    which can be used directly with pygame.Surface.blit
+    """
+    new_img = pygame.transform.rotate(image, math.degrees(-angle))
+    new_origin = rotate_point_around_pivot_simple(pivot_point, distance_from_pivot, angle)
+    new_rect = new_img.get_rect(center=new_origin)
+
+    return (new_img, new_rect)

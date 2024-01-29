@@ -12,11 +12,11 @@ import sprites
 import gui
 
 class Game_Data:
-    count = 0
+    count = 1
     animation_count = 0
-    cash = 800
+    cash = 240
     points = 1
-    difficulty = 5
+    difficulty = 1
 
 def main():    
     pygame.init()
@@ -59,7 +59,7 @@ def main():
 
     clock = pygame.time.Clock()
 
-    enemy = sprites.Basic()
+    enemy = sprites.Basic(Game_Data)
     enemy.spawn(grid, offset, scale)
     enemies_group.add(enemy)
 
@@ -71,7 +71,8 @@ def main():
         if not paused:
             elapsed_time = pygame.time.get_ticks()
             Game_Data.count += 1
-            Game_Data.points += 0.01 * Game_Data.difficulty
+            Game_Data.points += 0.01 * (Game_Data.difficulty / (Game_Data.count / 600))
+            print(Game_Data.difficulty / (Game_Data.count / 600))
             Game_Data.difficulty += 0.00001
             base_income = Game_Data.difficulty * 0.01
             Game_Data.cash += base_income
@@ -80,21 +81,22 @@ def main():
                 if Game_Data.count % 360 == 0:
                     for _ in range(int(Game_Data.difficulty)): 
                         if len(enemies_group.sprites()) < enemy_cap:
-                            enemy = sprites.Basic()
+                            enemy = sprites.Basic(Game_Data)
                             enemy.spawn(grid, offset, scale)
                             enemies_group.add(enemy)
+                            
             if Game_Data.difficulty >= 3:
                 if Game_Data.count % 400 == 0:
                     for _ in range(int(Game_Data.difficulty // 2)): 
                         if len(enemies_group.sprites()) < enemy_cap:
-                            enemy = sprites.Runner()
+                            enemy = sprites.Runner(Game_Data)
                             enemy.spawn(grid, offset, scale)
                             enemies_group.add(enemy)
             if Game_Data.difficulty >= 5:
                 if Game_Data.count % 800 == 0:
                     for _ in range(int(Game_Data.difficulty // 4)): 
                         if len(enemies_group.sprites()) < enemy_cap:
-                            enemy = sprites.Giant()
+                            enemy = sprites.Giant(Game_Data)
                             enemy.spawn(grid, offset, scale)
                             enemies_group.add(enemy)
 
@@ -192,7 +194,7 @@ def main():
         screen.fill((0, 0, 0))  # Fill the screen with black
         tools.draw_grid(screen, grid, scale, offset)
 
-        towers_group.update(screen, scale, offset, small_font, Game_Data, paused)
+        towers_group.update(screen, scale, offset, small_font, enemies_group, Game_Data, paused)
         enemies_group.update(screen, grid, towers_group, tower_grid, enemies_group, scale, offset, paused)
 
         cursor_xy = tools.get_cursor_xy(grid, scale, offset, size = 5)

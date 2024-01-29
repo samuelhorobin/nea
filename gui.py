@@ -22,6 +22,7 @@ def display_tower_stats(screen, font, tower, parent_rect = None):
     stats_str =f"\
     Selected tower:\n\
     Name: {tower.name}\n\
+    Level: {tower.level}\n\
     Health: {tower.health}/{tower.max_health}"
     
     text = font.render(stats_str , True, (255, 255, 255))
@@ -46,6 +47,7 @@ def display_enemy_stats(screen, font, enemies, parent_rect = None):
     for enemy in enemies:
         stats_str =f"\
         Name: {enemy.name}\n\
+        Level: {enemy.level}\n\
         Health: {enemy.health}/{enemy.max_health}"
     
         text = font.render(stats_str , True, (255, 255, 255))
