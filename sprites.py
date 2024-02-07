@@ -334,7 +334,7 @@ class Enemy(pygame.sprite.Sprite):
         shortest_distance = 9999
 
         for tower in towers:
-            if tower.name == "Wall": pass
+            if tower.name == "Wallz": pass
             else:
                 delta_height = tower.height - self.height if consider_height else 0
                 delta_x = tower.grid_row - self.grid_row

@@ -95,12 +95,13 @@ def display_menu(screen, menu, pos, large_font, font):
 def render_gui(screen,
                large_font, font, small_font,
                tower_menu,
-               paused, elapsed_time, Game_Data,
+               paused, alive, elapsed_time, Game_Data,
                selected_tower = None,
                selected_enemies = None):
     
-    if paused:
-        text = large_font.render("PAUSED" , True, (255, 255, 255))
+    if paused or not alive:
+        message = "PAUSED" if alive else "YOU DIED"
+        text = large_font.render(message , True, (255, 255, 255))
         text_rect = text.get_rect()
 
         text_rect.midtop = (settings.resolution[0] // 2, 20)  # Position the text in the upper right corner
