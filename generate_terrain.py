@@ -3,8 +3,21 @@ import pygame
 import tools
 
 def generate_terrain(power=6, roughness=1, seed=1, smoothing_factor=1):
+    '''
+    Generates a terrain map using the diamond-square algorithm.
+
+    Parameters:
+    - power: Integer, the size of the terrain will be 2^power + 1.
+    - roughness: Float, controls the roughness of the terrain.
+    - seed: Integer, seed for random number generation.
+    - smoothing_factor: Integer, number of times to apply terrain smoothing.
+
+    Returns:
+    - 2D NumPy array representing the generated terrain.
+    '''
+
     size = 2**power + 1
-    #np.random.seed(seed)
+    np.random.seed(seed)
 
     terrain = np.zeros((size, size), dtype=float)
     corners = [(0, 0), (0, size - 1), (size - 1, 0), (size - 1, size - 1)]
@@ -58,6 +71,16 @@ def generate_terrain(power=6, roughness=1, seed=1, smoothing_factor=1):
     return terrain
 
 def smooth_terrain(terrain):
+    '''
+    Applies smoothing to the terrain.
+
+    Parameters:
+    - terrain: 2D NumPy array representing the terrain.
+
+    Returns:
+    - 2D NumPy array, the smoothed terrain.
+    '''
+
     # Simple averaging smoothing function
     smoothed_terrain = terrain.copy()
 
@@ -66,7 +89,14 @@ def smooth_terrain(terrain):
 
     return smoothed_terrain
 
-def __visualize_terrain(terrain):
+def visualize_terrain(terrain):
+    '''
+    Visualizes the terrain using Pygame.
+
+    Parameters:
+    - terrain: 2D NumPy array representing the terrain.
+    '''
+
     pygame.init()
 
     size = terrain.shape[0]
@@ -95,4 +125,4 @@ def __visualize_terrain(terrain):
 
 if __name__ == '__main__':
     terrain = generate_terrain(power=6, roughness=0.5, smoothing_factor=1)
-    __visualize_terrain(terrain)
+    visualize_terrain(terrain)

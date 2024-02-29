@@ -1,12 +1,11 @@
 # Import necessary libraries
 import pygame
 import numpy as np
-import random
 from collections import deque
 
 # Import custom modules
 import generate_terrain as gt
-import generate_terrain as gtc
+import generate_terrain as gtc  # Repeated import; can be removed
 import settings
 import tools
 import sprites
@@ -14,11 +13,11 @@ import gui
 
 # Define a class to store game data
 class Game_Data:
-    count = 1
-    animation_count = 0
-    cash = 240
-    points = 1
-    difficulty = 1
+    count = 1  # Counter for game ticks
+    animation_count = 0  # Counter for animation ticks
+    cash = 240  # Player's in-game currency
+    points = 1  # Player's score
+    difficulty = 1  # Difficulty level of the game
 
 # Main game function
 def main():
@@ -37,11 +36,11 @@ def main():
     scale = 1
     offset = [0, 0]
     zoom_queue = deque()
-    zoom_ticks = 15
+    zoom_ticks = 15  # Speed of zooming
 
     # Define tower menu items
     menu_item1, menu_item2, menu_item3, menu_item4 = "$20: Wall", "$120: Sniper", "$240: Producer", "$800: Headquarters"
-    tower_menu = tools.ExclusiveBooleanList(menu_item1, menu_item2, menu_item3, menu_item4)
+    tower_menu = tools.ExclusiveBooleanList(menu_item1, menu_item2, menu_item3, menu_item4)  # Menu for tower selection
 
     # Set grid size based on selected difficulty
     if settings.selected_difficulty == "easy":
@@ -56,7 +55,7 @@ def main():
 
     # Initialize tower grid and other variables
     tower_grid = np.full_like(grid, fill_value=None, dtype=object)
-    placeable = False
+    placeable = False  # Flag to check if a tower can be placed
 
     # Create Pygame sprite groups for towers and enemies
     towers_group = pygame.sprite.Group()
@@ -204,7 +203,7 @@ def main():
                         towers_group.add(placed_tower)
                         Game_Data.cash -= 800
 
-        # Update continuous movement based on key states
+        # Update continuous movement based on key statesD
         if move_keys[pygame.K_UP] or move_keys[pygame.K_w]:
             offset[1] += move_speed
         if move_keys[pygame.K_DOWN] or move_keys[pygame.K_s]:
